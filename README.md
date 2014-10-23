@@ -1,5 +1,4 @@
 MovieSpoilerBot
 ===============
 
-Evil
-Blahjahahahaha
+Evil twitter bot. 
