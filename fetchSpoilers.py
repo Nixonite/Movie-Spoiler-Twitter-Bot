@@ -17,14 +17,17 @@ def weirdTextFix(str):
 def getSite():
 	return urllib2.urlopen(spoilerSite).read()
 	
+def getTheDamnText(soupstuff):
+	text = str(soupstuff)
+	text = text[text.index('>')+1:text.index('</')]
+	return text
+	
 def parsePage(html_page):
 	soup = BeautifulSoup(html_page)
 	title = soup.findAll(attrs={'class' : 'title-text'})
-	title = str(title)
-	title = title[title.index('>')+1:title.index('</')]
 	spoiler = soup.findAll(attrs={'class':'spoiler-text'})
-	spoiler = str(spoiler)
-	spoiler = spoiler[spoiler.index('>')+1:spoiler.index('</')]
+	title = getTheDamnText(title)
+	spoiler = getTheDamnText(spoiler)
 	title = weirdTextFix(title)
 	spoiler = weirdTextFix(spoiler)
 	return (title,spoiler)
