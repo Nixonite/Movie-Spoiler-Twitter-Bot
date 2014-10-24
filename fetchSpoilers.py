@@ -1,6 +1,7 @@
 import urllib2
 from BeautifulSoup import BeautifulSoup
 import sqlite3
+import time
 
 conn = sqlite3.connect('moviespoilerbot.db')
 c = conn.cursor()
@@ -33,14 +34,15 @@ def parsePage(html_page):
 	return (title,spoiler)
 	
 def insertToDB(title,spoiler):
-	valid_utf8 = True #because mysql only takes utf-8 and too lazy to change that, but still runs into problem sometimes? what the hell...
+
+	validAscii = True
 	try:
-		title.decode('utf-8')
-		spoiler.decode('utf-8')
+		title.decode('ascii')
+		spoiler.decode('ascii')
 	except UnicodeDecodeError:
-		valid_utf8 = False
-	
-	if valid_utf8:
+		validAscii = False
+
+	if validAscii:
 		if(len(spoiler)<=140):#to be tweetable
 			tablename = "table_"+title[0]
 			c.execute("create table if not exists "+tablename+"(ID INTEGER PRIMARY KEY, TITLE text, SPOILER text)")
@@ -54,7 +56,8 @@ def insertToDB(title,spoiler):
 					conn.commit()
 	
 
-for i in range(300):
+for i in range(30):
+	time.sleep(0.3)
 	t,s = parsePage(getSite())
 	insertToDB(t,s)
 
