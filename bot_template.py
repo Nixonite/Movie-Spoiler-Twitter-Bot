@@ -12,7 +12,8 @@ from twitter.oauth_dance import oauth_dance
 from urllib2 import URLError
 from httplib import BadStatusLine
 
-sys.path.append("/Users/nixonite/Documents/Code/Github/MovieSpoilerBot")
+sys.path.append("/Users/nixonite/Documents/Code/Github/MovieSpoilerBot") 
+#put the directory of the keys 1 level above the project directory to hide from accidental commits
 import moviespoilerbotkeys as msbk
 
 #import any other natual processing libs
@@ -117,7 +118,7 @@ if __name__ == "__main__":
 			last_id = -1
 			status = make_twitter_request(bot.statuses.user_timeline)
 			if len(status) > 0:
-				last_id = status[:-1]['in_reply_to_status_id']
+				last_id = status[-1]['in_reply_to_status_id']
 
 			if not mentions:
 				print "No one talking to us now...", time.ctime()
@@ -134,7 +135,7 @@ if __name__ == "__main__":
 					print "[+] Replying " , reply
 					bot.statuses.update(status=reply,in_reply_to_status_id=id)
 			
-			sleep_int = 60 #downtime interval in seconds
+			sleep_int = 5 #downtime interval in seconds
 			print "Sleeping...\n"
 			time.sleep(sleep_int)
 			
