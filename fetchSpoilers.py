@@ -54,11 +54,14 @@ def insertToDB(title,spoiler):
 					print title
 					print spoiler
 					conn.commit()
+					return True
+	return False
 	
-
-for i in range(30):
+counter = 0
+while counter<5:
 	time.sleep(0.3)
 	t,s = parsePage(getSite())
-	insertToDB(t,s)
+	if insertToDB(t,s):
+		counter +=1
 
 conn.close()
