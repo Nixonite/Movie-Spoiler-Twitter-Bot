@@ -107,6 +107,18 @@ def response(message):
 
 if __name__ == "__main__":
 
+	if os.path.exists("last_id.txt"):
+		f = file("last_id.txt", "r")
+		last_id = f.read()
+		last_id = int(last_id)
+		f.close()
+	else:
+		f = file("last_id.txt","w+")
+		last_id = -1
+		f.write(str(last_id))
+		f.close()
+	
+	
 	bot = oauth_login()
 	bot_name = '@MovieSpoilerBot' #put your actual bot's name here
 	
@@ -115,16 +127,18 @@ if __name__ == "__main__":
 		try:
 			mentions = make_twitter_request(bot.statuses.mentions_timeline)
 			
-			last_id = -1
 			status = make_twitter_request(bot.statuses.user_timeline)
+			#status is a list of the tweets with a ton of info, organized as newest tweet at status[0] and oldest at status[-1]
+			#note that a new tweet has a numerically greater twitter id than an older one
+			
 			if len(status) > 0:
-				last_id = status[-1]['in_reply_to_status_id']
+				last_id = status[0]['in_reply_to_status_id']
 
 			if not mentions:
 				print "No one talking to us now...", time.ctime()
 
 			for mention in mentions:
-				if mention['id'] != last_id:
+				if mention['id'] > last_id:
 					message = mention['text'].replace(bot_name, '')
 					speaker = mention['user']['screen_name']
 					id = mention['id']
@@ -140,5 +154,10 @@ if __name__ == "__main__":
 			time.sleep(sleep_int)
 			
 		except KeyboardInterrupt:
+			open("last_id.txt","w").close()
+			f = file("last_id.txt","w")
+			f.write(str(last_id))
+			f.close()
 			print"[!] Cleaning up. Last speaker_id was ", speaker_id
+			
 			sys.exit()
