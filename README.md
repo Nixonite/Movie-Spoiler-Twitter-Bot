@@ -6,13 +6,17 @@ Evil twitter bot.
 
 <table><h2>Requirements:</h2> (all free)
 
+<tr>
 <td>SQLite</td>
+<tr>
 <td>MongoDB for storage of streaming tweets (not included since it's huge)</td>
+</tr>
+</table>
 
 For Python:
-<tr>
+<table>
 <td>BeautifulSoup</td>
-<td>sqlite3
+<td>sqlite3</td>
 <td>nltk</td>
 <td>pymongo</td>
 </tr>
