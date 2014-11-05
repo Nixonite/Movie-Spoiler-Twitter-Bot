@@ -24,8 +24,8 @@ for i in movies:
 	movieRegex.append(makeRegex(i))
 
 
-for i in moviesRegex:
-	PossibleTweetList = list(twitterDB.find({"text":{"$regex":i}})["text"].limit(20))
+for i in movieRegex:
+	PossibleTweetList = list(twitterDB.find({"text":{"$regex":i}}).limit(20))
 	for tweet in PossibleTweetList:
 		stemmer = nltk.WordNetLemmatizer()
 		lemmas = []
@@ -37,9 +37,3 @@ for i in moviesRegex:
 			if i == "see" or i == "watch" or i == "catch":
 				print "Yay",lemmas[lemmas.index(i)]
 				break;
-
-
-
-
-
-
