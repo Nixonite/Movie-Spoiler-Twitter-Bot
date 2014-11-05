@@ -1,10 +1,8 @@
 <h1>MovieSpoilerBot</h1>
-===============
 
 Evil twitter bot. 
 
-
-<table><h2>Requirements:</h2> (all free)
+<table><h2>Requirements (free):</h2> 
 
 <tr>
 <td>SQLite</td>
