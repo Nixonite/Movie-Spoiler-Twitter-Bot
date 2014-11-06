@@ -1,15 +1,17 @@
 from nltk.stem.lancaster import LancasterStemmer
 import pymongo
 import re
+import sqlite3
 
 
 def makeRegex(movie):
-	regex = ""
+	regex = "(?i)"
 	for i in movie:
 		if i == " ":
-			regex+= "(\\s)?"
+			regex+= "(\s)?"
 		else:
-			regex+= "["+i.lower() + i.upper() + "]"
+			regex+= i
+			
 	return regex
 
 conn = pymongo.MongoClient()
@@ -18,15 +20,23 @@ db = conn.twitter
 
 twitterDB = db.lines
 
-movies =["Ouija", "Interstellar","John Wick","Gone Girl"]
+movies =["Gone Girl"]
 movieRegex = []
 for i in movies:
 	movieRegex.append(makeRegex(i))
 
 st = LancasterStemmer()
 
-for i in movieRegex: #still needs to differentiate between past and present tense SENTENCES, not just words
-	PossibleTweetList = list(twitterDB.find({"text":{"$regex":i}}).limit(20))
+movieAndRegex = []
+
+for i in range(len(movies)):
+	movieAndRegex.append((movies[i],movieRegex[i]))
+	
+SQLCONN = sqlite3.connect('moviespoilerbot.db')
+c = SQLCONN.cursor()
+
+for i in movieAndRegex: #still needs to differentiate between past and present tense SENTENCES, not just words
+	PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(20))
 	for tweet in PossibleTweetList:
 		if ("watched" in tweet['text']) or ("saw" in tweet['text']):
 			break;
@@ -34,5 +44,13 @@ for i in movieRegex: #still needs to differentiate between past and present tens
 		for w in tweetWords:
 			stemmed = st.stem(w)
 			if stemmed == "see" or stemmed == "watch" or stemmed == "catch":
-				print "Yay",tweet
+				tablename = "table_"+i[0][0]
+				c.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":i[0]})
+				spoiler = c.fetchone()
+				print tweet['id_str'],tweet['text'],"\n","Movie:",i[0],"\t Spoiler:",spoiler,"\n\n\n"
 				break;
+
+SQLCONN.close()
+				
+
+				
