@@ -52,8 +52,8 @@ c = SQLCONN.cursor()
 for i in movieAndRegex: #still needs to differentiate between past and present tense SENTENCES, not just words
 	PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(50))
 	for tweet in PossibleTweetList:
-		if re.search("watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|good|went",tweet['text']) is None:
-			if re.search("watch|watching|wanna|see|want",tweet['text']):		
+		if re.search("(?i)watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|good|went",tweet['text']) is None:
+			if re.search("(?i)watch|watching|wanna|see|want",tweet['text']):		
 				tablename = "table_"+i[0][0]
 				c.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":i[0]})
 				spoiler = c.fetchone()
