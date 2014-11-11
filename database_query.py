@@ -33,7 +33,6 @@ movies =[
 		"The Judge",
 		"Birdman",
 		"Horns",
-		"Addicted"
 		]
 
 movieRegex = []
@@ -51,19 +50,14 @@ SQLCONN = sqlite3.connect('moviespoilerbot.db')
 c = SQLCONN.cursor()
 
 for i in movieAndRegex: #still needs to differentiate between past and present tense SENTENCES, not just words
-	PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(200))
+	PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(50))
 	for tweet in PossibleTweetList:
-		if ("watched" in tweet['text']) or ("saw" in tweet['text']) or ("again" in tweet['text']):
-			break;
-		tweetWords = tweet['text'].split()
-		for w in tweetWords:
-			stemmed = st.stem(w)
-			if stemmed == "watch":
+		if re.search("watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|good|went",tweet['text']) is None:
+			if re.search("watch|watching|wanna|see|want",tweet['text']):		
 				tablename = "table_"+i[0][0]
 				c.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":i[0]})
 				spoiler = c.fetchone()
 				print tweet['id_str'],tweet['text'],"\n","Movie:",i[0],"\t Spoiler:",spoiler,"\n\n\n"
-				break;
 
 SQLCONN.close()
 				
