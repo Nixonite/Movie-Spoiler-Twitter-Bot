@@ -5,7 +5,7 @@ import sqlite3
 
 
 def toRegex(movie):#movies -> movieregex
-	regex = "(?i)"
+	regex = "(?i)[^a-z]"
 	for i in movie:
 		if i == " ":
 			regex+= "(\s)?"
@@ -47,12 +47,11 @@ def sqlClose(SQLCONN):
 	SQLCONN.close()
 
 def regexFilter(tweet):#takes out false positive tweets
-	if re.search("(?i)watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|good|went",tweet['text']) is None:
+	if re.search("(?i)watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|good|went|were|second\stime|produced",tweet['text']) is None:
 		#the above regex excludes stuff like fantastic/great/amazing etc. because they often come in the form of a review of the film i.e. already watched it.
-		if re.search("(?i)watch|watching|wanna|see|want",tweet['text']):		
+		if re.search("(?i)watch|watching|wanna see|wanna watch|going to movie|see|want to see|want to watch",tweet['text']):		
 			return True
-		else: return False
-	else: return False
+	return False
 
 def spoil(tweet,movieAndRegex,sqlc):#the act of evil
 	tablename = "table_"+movieAndRegex[0][0]
@@ -62,24 +61,23 @@ def spoil(tweet,movieAndRegex,sqlc):#the act of evil
 
 def query(movieAndRegex,twitterDB=mongoConnect(),sqlc=sqlConnect(sqlStart())):#maybe needs a better name since it both queries the mongodb and spoils
 	for i in movieAndRegex: #still needs to differentiate between past and present tense SENTENCES, not just words
-		PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(50))
+		PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(2))
 		for tweet in PossibleTweetList:
 			if regexFilter(tweet):
 				spoil(tweet,i,sqlc)
 				
 movies =[#should be moved to main.py in the future
-		"John Wick",
-		"The Maze Runner",
-		"Ouija","Annabelle",
+		'''"The Maze Runner",
+		"Ouija",
+		"Annabelle",
 		"Big Hero 6",
 		"Interstellar",
 		"Nightcrawler",
 		"Fury",
 		"Gone Girl",
 		"The Book of Life",
-		"The Judge",
-		"Birdman",
-		"Horns",
+		"Birdman"'''
+		"Horns"
 		]
 
 query(genMoviesRegexTuple(movies,genRegex(movies)))#test
