@@ -3,6 +3,8 @@ import pymongo
 import re
 import sqlite3
 
+global matchedCounter
+matchedCounter = 0
 
 def toRegex(movie):#movies -> movieregex
 	regex = "(?i)[^a-z]"
@@ -47,9 +49,9 @@ def sqlClose(SQLCONN):
 	SQLCONN.close()
 
 def regexFilter(tweet):#takes out false positive tweets
-	if re.search("(?i)watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|good|went|were|second\stime|produced",tweet['text']) is None:
+	if re.search("(?i)watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|favorite|good|went|were|second\stime|produced",tweet['text']) is None:
 		#the above regex excludes stuff like fantastic/great/amazing etc. because they often come in the form of a review of the film i.e. already watched it.
-		if re.search("(?i)watch|watching|wanna see|wanna watch|going to movie|see|want to see|want to watch",tweet['text']):		
+		if re.search("(?i)watching|wanna see|want to see|wanna watch|want to watch",tweet['text']):		
 			return True
 	return False
 
@@ -57,17 +59,27 @@ def spoil(tweet,movieAndRegex,sqlc):#the act of evil
 	tablename = "table_"+movieAndRegex[0][0]
 	sqlc.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":movieAndRegex[0]})
 	spoiler = sqlc.fetchone()
-	print tweet['id_str'],tweet['text'],"\n","Movie:",movieAndRegex[0],"\t Spoiler:",spoiler,"\n\n\n"
+	print tweet['id_str'],tweet['text'],"\n","Movie:",movieAndRegex[0],"\t Spoiler:",spoiler,"\n"
 
 def query(movieAndRegex,twitterDB=mongoConnect(),sqlc=sqlConnect(sqlStart())):#maybe needs a better name since it both queries the mongodb and spoils
-	for i in movieAndRegex: #still needs to differentiate between past and present tense SENTENCES, not just words
-		PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(2))
+	for i in movieAndRegex:
+		print "\n\n=================================================\n"
+		print "Looking for ",i[0],"...\n"#movie name
+		PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(20))
+		print "Possible Targets: ",len(PossibleTweetList)
+		
+		failedMatchCounter = 0
 		for tweet in PossibleTweetList:
 			if regexFilter(tweet):
 				spoil(tweet,i,sqlc)
+				global matchedCounter
+				matchedCounter+=1
+			else:
+				failedMatchCounter+=1
+		print failedMatchCounter,"/",len(PossibleTweetList)," skipped.\n\n"
 				
 movies =[#should be moved to main.py in the future
-		'''"The Maze Runner",
+		"The Maze Runner",
 		"Ouija",
 		"Annabelle",
 		"Big Hero 6",
@@ -76,9 +88,9 @@ movies =[#should be moved to main.py in the future
 		"Fury",
 		"Gone Girl",
 		"The Book of Life",
-		"Birdman"'''
+		"Birdman",
 		"Horns"
 		]
 
 query(genMoviesRegexTuple(movies,genRegex(movies)))#test
-					
+print "Total Matches: ",matchedCounter
