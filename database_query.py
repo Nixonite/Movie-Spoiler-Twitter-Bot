@@ -7,12 +7,13 @@ global matchedCounter
 matchedCounter = 0
 
 def toRegex(movie):#movies -> movieregex
-	regex = "(?i)[^a-z]"
+	regex = "(?i)[^\w]"
 	for i in movie:
 		if i == " ":
 			regex+= "(\s)?"
 		else:
 			regex+= i
+	regex +="[^\w]"
 	return regex
 
 def mongoConnect():
@@ -49,7 +50,7 @@ def sqlClose(SQLCONN):
 	SQLCONN.close()
 
 def regexFilter(tweet):#takes out false positive tweets
-	if re.search("(?i)watched|saw|again|seen|watches|was|great|fantastic|amazing|cool|favorite|good|went|were|second\stime|produced",tweet['text']) is None:
+	if re.search("(?i)watched|saw|again|seen|watches|was|great|after watching|fantastic|amazing|cool|favorite|good|went|were|second\stime|produced",tweet['text']) is None:
 		#the above regex excludes stuff like fantastic/great/amazing etc. because they often come in the form of a review of the film i.e. already watched it.
 		if re.search("(?i)watching|wanna see|want to see|wanna watch|want to watch",tweet['text']):		
 			return True
@@ -65,7 +66,7 @@ def query(movieAndRegex,twitterDB=mongoConnect(),sqlc=sqlConnect(sqlStart())):#m
 	for i in movieAndRegex:
 		print "\n\n=================================================\n"
 		print "Looking for ",i[0],"...\n"#movie name
-		PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).limit(20))
+		PossibleTweetList = list(twitterDB.find({"text":{"$regex":i[1]}}).sort([['_id', -1]] ).limit(10))
 		print "Possible Targets: ",len(PossibleTweetList)
 		
 		failedMatchCounter = 0
