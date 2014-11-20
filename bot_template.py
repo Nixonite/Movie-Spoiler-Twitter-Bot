@@ -104,7 +104,7 @@ def make_twitter_request(twitter_api_func, max_errors=10, *args, **kw):
 def response(message):
 	return message
 
-
+'''
 if __name__ == "__main__":
 
 	if os.path.exists("last_id.txt"):
@@ -160,4 +160,4 @@ if __name__ == "__main__":
 			f.close()
 			print"[!] Cleaning up. Last speaker_id was ", speaker_id
 			
-			sys.exit()
+			sys.exit()'''
