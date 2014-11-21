@@ -5,7 +5,7 @@ import time
 
 global matchedCounter
 global howMuchToSearch
-howMuchToSearch = 80
+howMuchToSearch = 60
 matchedCounter = 0
 
 def mongoConnect():
@@ -52,7 +52,7 @@ def moviesToRegexList(movies):#generates regex for the movies list
 		movieRegex.append(movieToRegex(i))
 	return movieRegex
 		
-def tupleMoviesSpoilers(movies,movieRegex):#more convenient for later use
+def tupleMoviesRegex(movies,movieRegex):#more convenient for later use
 	print "Generating regex..."
 	movieAndRegex = []
 	for i in range(len(movies)):
@@ -65,10 +65,14 @@ def oneRegexToRuleThemAll(movieRegexList):
 	for i in range(1,len(movieRegexList)):
 		giantMovieRegex+="|"+movieRegexList[i]
 	return giantMovieRegex
+	
+def rememberTheMovie(text,tupleMR):
+	for i in range(len(tupleMR)):
+		if re.search("(?i)"+tupleMR[i][1],text):
+			return str(tupleMR[i][0])
 
 
 ###############################################################
-
 
 
 def regexFilter(tweet):#takes out false positive tweets, also assumes tweet is lowercase
@@ -79,18 +83,18 @@ def regexFilter(tweet):#takes out false positive tweets, also assumes tweet is l
 			return True
 	return False
 
-def spoil(tweet,movieAndRegex,sqlc):#the act of evil
-	tablename = "table_"+movieAndRegex[0][0]
-	sqlc.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":movieAndRegex[0]})
+def spoil(tweet,title,sqlc):#the act of evil
+	tablename = "table_"+title[0]
+	sqlc.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":title})
 	spoiler = sqlc.fetchone()
-	print tweet['id_str'],tweet['text'],"\n","Movie:",movieAndRegex[0],"\t Spoiler:",spoiler,"\n"
+	print tweet['id_str'],tweet['text'],"\n","Movie:",title,"\t Spoiler:",spoiler,"\n"
 
 def query(bigMovieRegex,twitterDB,sqlc):#maybe needs a better name since it both queries the mongodb and spoils
 
 	global howMuchToSearch
 	
 	startT = time.time()
-	print "Starting a search in the database for ",howMuchToSearch," possible tweets..."
+	print "\n\n\nStarting a search in the database for ",howMuchToSearch," possible tweets..."
 	PossibleTweetList = list(twitterDB.find({"text":{"$regex":bigMovieRegex}}).sort([['id_str', 1]]).limit(howMuchToSearch))# sorting by str_id is faster than _id
 
 	print "Time it took: ",time.time()-startT
@@ -99,9 +103,9 @@ def query(bigMovieRegex,twitterDB,sqlc):#maybe needs a better name since it both
 	for tweet in PossibleTweetList:
 		
 		if regexFilter(tweet):
-			#figure out which movie it's talking about, then pass it to spoil
-			#spoil(tweet,i,sqlc)
-			print tweet['id_str'],tweet['text'],'\n','Movie: no idea \t Spoiler: no clue\n'
+			title = rememberTheMovie(tweet['text'],tupleMoviesRegex(movies,moviesToRegexList(movies)))
+			spoil(tweet,title,sqlc)
+			#print tweet['id_str'],tweet['text'],'\n','Movie: no idea \t Spoiler: no clue\n'
 			global matchedCounter
 			matchedCounter+=1
 
