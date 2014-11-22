@@ -2,6 +2,8 @@ import pymongo
 import re
 import sqlite3
 import time
+import twitterwrapper
+from datetime import datetime
 
 global matchedCounter
 global howMuchToSearch
@@ -36,9 +38,7 @@ def noDuplicatesSetup(sqlc):
 	sqlc.execute("create table if not exists Replied_Tweets (ID INTEGER PRIMARY KEY, tweetID VARCHAR(255))")
 	sqlc.commit()
 
-
 ###############################################################
-
 
 def movieToRegex(movie):#movies -> movieregex
 	regex = "((^|[^\w])"
@@ -75,21 +75,35 @@ def rememberTheMovie(text,tupleMR):
 		if re.search("(?i)"+tupleMR[i][1],text):
 			return str(tupleMR[i][0])
 
+###############################################################
+
+def isTweetRecent(bot,str_id):
+	tweetTime = bot.statuses.show(id=str_id)#mybot = oauth_login()
+	tweetTime = tweetTime['created_at']#u'Thu Nov 13 21:47:43 +0000 2014'
+	tweetTimeList = tweetTime.split()
+	del tweetTimeList[0]
+	del tweetTimeList[-2]
+	tweetTime = " ".join(tweetTimeList)
+	tweetTime = datetime.strptime(tweetTime,'%b %d %H:%M:%S %Y')
+	presentTime = datetime.now()
+
+	timedelta = presentTIme - tweetTime
+	if timedelta.days is 0:
+		if timedelta.seconds < 3600*3: #less than 3 hours
+			return True
+	return False
 
 ###############################################################
 
-
 def regexFilter(tweet):#trivial time
 	text = tweet['text'].lower()
-	if re.search("watched|saw|again|seen|watches|was|great|after|seat|back\s*from\s*seeing|from\s*watching|while\s*watching|fantastic|amazing|cool|favorite|good|went|were|second\s*time|produced|funny|sad|recommend",text) is None:
+	if re.search("watched|saw|again|seen|watches|was|great|remember|after|seat|back\s*from\s*seeing|from\s*watching|while\s*watching|fantastic|amazing|cool|favorite|good|went|were|second\s*time|produced|funny|sad|recommend",text) is None:
 	#the above regex excludes stuff like fantastic/great/amazing etc. because they often come in the form of a review of the film i.e. already watched it.
 		if re.search("watching|gonna\s*see|gonna\s*watch|wanna\s*see|want\s*to\s*see|going\s*to\s*see|seeing|going\s*to\s*watch|wanna\s*watch|wanna\s*go\s*see|want\s*to\s*go\s*see|I\s*need\s*to\s*see|I\s*have\s*to\s*watch|want\s*to\s*watch|seeing",text):
 			return True
 	return False
 	
-
 ###############################################################
-
 
 def spoil(tweet,title,sqlc):#the act of evil
 	tablename = "table_"+title[0]
@@ -114,8 +128,7 @@ def insertDuplicatesTable(id_str,sqlCURSOR,sqlCONN):
 
 ###############################################################
 
-
-def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN):#maybe needs a better name since it both queries the mongodb and spoils
+def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN,bot):#maybe needs a better name since it both queries the mongodb and spoils
 
 	global howMuchToSearch
 	global matchedCounter
@@ -131,14 +144,14 @@ def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN):#maybe needs a better name 
 	for tweet in PossibleTweetList:
 		if noDuplicate(tweet['id_str'],sqlCURSOR):
 			if regexFilter(tweet):
-				title = rememberTheMovie(tweet['text'],movieRegTupe)
-				spoil(tweet,title,sqlCURSOR)
-				insertDuplicatesTable(tweet['id_str'],sqlCURSOR,sqlCONN)
-				matchedCounter+=1
+				if isTweetRecent(bot,tweet['id_str']):
+					title = rememberTheMovie(tweet['text'],movieRegTupe)
+					spoil(tweet,title,sqlCURSOR)
+					insertDuplicatesTable(tweet['id_str'],sqlCURSOR,sqlCONN)
+					matchedCounter+=1
 			
 
 ###############################################################
-
 
 movies =[#should be moved to main.py in the future
 		"The Maze Runner",
@@ -197,9 +210,7 @@ movies =[#should be moved to main.py in the future
 
 #turns out it's faster with more popular movies, not more movies.
 
-
 ###############################################################
-
 
 megaRegex = oneRegexToRuleThemAll(moviesToRegexList(movies))
 twitterDB=mongoConnect()
@@ -207,9 +218,11 @@ sqlCONN = sqlStart()
 sqlCURSOR= sqlConnect(sqlCONN)
 noDuplicatesSetup(sqlCONN)
 
+bot = twitterwrapper.oauth_login()
+bot_name = '@MovieSpoilerBot' #put your actual bot's name here
 
 for i in range(2):
-	query(megaRegex,twitterDB,sqlCURSOR,sqlCONN)
+	query(megaRegex,twitterDB,sqlCURSOR,sqlCONN,bot)
 	print "Total Matches: ",matchedCounter,"/",howMuchToSearch
 	matchedCounter=0
 
