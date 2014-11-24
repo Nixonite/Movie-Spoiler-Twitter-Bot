@@ -7,7 +7,7 @@ from datetime import datetime
 
 global matchedCounter
 global howMuchToSearch
-howMuchToSearch = 100
+howMuchToSearch = 300
 matchedCounter = 0
 
 def mongoConnect():
@@ -162,6 +162,23 @@ def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN,bot):#maybe needs a better n
 
 movies =[#should be moved to main.py in the future
 		"The Maze Runner",
+		"Breaking Bad",
+		"Dracular Untold",
+		"Dumb and Dumber To",
+		"Fifty Shades of Grey",
+		"The Hunger Games: Mockingjay Part 1",
+		"Whiplash",
+		"Theory of Everything",
+		"Beyond the Lights",
+		"The Walking Dead",
+		"Sons of Anarchy",
+		"How I Met Your Mother",
+		"Castle",
+		"Greys Anatomy",
+		"Orange is the New Black",
+		"Dexter",
+		"Scandal",
+		"Revenge",
 		"Ouija",
 		"Annabelle",
 		"Big Hero 6",
