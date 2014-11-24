@@ -7,7 +7,7 @@ from datetime import datetime
 
 global matchedCounter
 global howMuchToSearch
-howMuchToSearch = 60
+howMuchToSearch = 100
 matchedCounter = 0
 
 def mongoConnect():
@@ -78,28 +78,32 @@ def rememberTheMovie(text,tupleMR):
 ###############################################################
 
 def isTweetRecent(bot,str_id):
-	tweetTime = bot.statuses.show(id=str_id)#mybot = oauth_login()
-	tweetTime = tweetTime['created_at']#u'Thu Nov 13 21:47:43 +0000 2014'
-	tweetTimeList = tweetTime.split()
-	del tweetTimeList[0]
-	del tweetTimeList[-2]
-	tweetTime = " ".join(tweetTimeList)
-	tweetTime = datetime.strptime(tweetTime,'%b %d %H:%M:%S %Y')
-	presentTime = datetime.now()
+	try:
+		tweetTime = bot.statuses.show(id=str_id)#mybot = oauth_login()
+		tweetTime = tweetTime['created_at']#u'Thu Nov 13 21:47:43 +0000 2014'
+		tweetTimeList = tweetTime.split()
+		del tweetTimeList[0]
+		del tweetTimeList[-2]
+		tweetTime = " ".join(tweetTimeList)
+		tweetTime = datetime.strptime(tweetTime,'%b %d %H:%M:%S %Y')
+		presentTime = datetime.now()
 
-	timedelta = presentTIme - tweetTime
-	if timedelta.days is 0:
-		if timedelta.seconds < 3600*3: #less than 3 hours
-			return True
-	return False
+		timedelta = presentTime - tweetTime
+		if timedelta.days <2:
+			if timedelta.seconds < 3600*24: #less than 3 hours
+				print tweetTime
+				return True
+		return False
+	except Exception:
+		pass
 
 ###############################################################
 
 def regexFilter(tweet):#trivial time
 	text = tweet['text'].lower()
-	if re.search("watched|saw|again|seen|watches|was|great|remember|after|seat|back\s*from\s*seeing|from\s*watching|while\s*watching|fantastic|amazing|cool|favorite|good|went|were|second\s*time|produced|funny|sad|recommend",text) is None:
+	if re.search("watched|saw|again|seen|watches|was|great|remember|after|seat|back\s*from|from\s*watching|while\s*watching|fantastic|amazing|cool|favo(u)?rite|good|went|were|second\s*time|produced|funny|sad|recommend|sweet|after\s*seeing|after\s*watching|ending|never\s*watch|never\s*see",text) is None:
 	#the above regex excludes stuff like fantastic/great/amazing etc. because they often come in the form of a review of the film i.e. already watched it.
-		if re.search("watching|gonna\s*see|gonna\s*watch|wanna\s*see|want\s*to\s*see|going\s*to\s*see|seeing|going\s*to\s*watch|wanna\s*watch|wanna\s*go\s*see|want\s*to\s*go\s*see|I\s*need\s*to\s*see|I\s*have\s*to\s*watch|want\s*to\s*watch|seeing",text):
+		if re.search("watching|gonna\s*see|gonna\s*watch|wanna\s*see|want\s*to\s*see|going\s*to\s*see|seeing|going\s*to\s*watch|wanna\s*watch|wanna\s*go\s*see|want\s*to\s*go\s*see|I\s*need\s*to\s*see|I\s*have\s*to\s*watch|I\s*need\s*to\s*watch|want\s*to\s*watch|going\s*to\s*the\s*movies|watch\s*a\s*movie|see\s*a\s*movie|watching\s*a\s*movie|at\s*the\s*movies|about\s*to\s*watch|about\s*to\s*see|I\s*need\s*to\s*watch",text):
 			return True
 	return False
 	
@@ -135,7 +139,7 @@ def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN,bot):#maybe needs a better n
 	
 	startT = time.time()
 	print "\n\n\nStarting a search in the database for ",howMuchToSearch," possible tweets..."
-	PossibleTweetList = list(twitterDB.find({"text":{"$regex":bigMovieRegex}}).sort([['id_str', 1]]).limit(howMuchToSearch))# sorting by str_id is faster than _id
+	PossibleTweetList = list(twitterDB.find({"text":{"$regex":bigMovieRegex}}).sort([['id_str', -1]]).limit(howMuchToSearch))# sorting by str_id is faster than _id
 
 	print "Time it took: ",time.time()-startT
 	print "Done. Now seeing if they match..."
@@ -144,12 +148,15 @@ def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN,bot):#maybe needs a better n
 	for tweet in PossibleTweetList:
 		if noDuplicate(tweet['id_str'],sqlCURSOR):
 			if regexFilter(tweet):
-				if isTweetRecent(bot,tweet['id_str']):
-					title = rememberTheMovie(tweet['text'],movieRegTupe)
-					spoil(tweet,title,sqlCURSOR)
-					insertDuplicatesTable(tweet['id_str'],sqlCURSOR,sqlCONN)
-					matchedCounter+=1
-			
+				try:
+					if isTweetRecent(bot,tweet['id_str']):
+						title = rememberTheMovie(tweet['text'],movieRegTupe)
+						spoil(tweet,title,sqlCURSOR)
+						insertDuplicatesTable(tweet['id_str'],sqlCURSOR,sqlCONN)
+						matchedCounter+=1
+				except Exception:
+					pass
+		
 
 ###############################################################
 
