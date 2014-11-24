@@ -7,7 +7,7 @@ from datetime import datetime
 
 global matchedCounter
 global howMuchToSearch
-howMuchToSearch = 300
+howMuchToSearch = 150
 matchedCounter = 0
 
 def mongoConnect():
@@ -108,15 +108,7 @@ def regexFilter(tweet):#trivial time
 	return False
 	
 ###############################################################
-
 def spoil(tweet,title,sqlc):#the act of evil
-	tablename = "table_"+title[0]
-	sqlc.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":title})
-	spoiler = sqlc.fetchone()
-	print tweet['id_str'],tweet['text'],"\n","Movie:",title,"\t Spoiler:",spoiler,"\n"
-	
-###############################################################
-def sspoil(tweet,title,sqlc):#the act of evil
 	tablename = "table_"+title[0]
 	sqlc.execute("select spoiler from "+tablename+" where TITLE=:title",{"title":title})
 	spoiler = sqlc.fetchone()
@@ -144,13 +136,8 @@ def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN,bot):#maybe needs a better n
 
 	global howMuchToSearch
 	global matchedCounter
-	
-	startT = time.time()
-	print "\n\n\nStarting a search in the database for ",howMuchToSearch," possible tweets..."
-	PossibleTweetList = list(twitterDB.find({"text":{"$regex":bigMovieRegex}}).sort([['id_str', -1]]).limit(howMuchToSearch))# sorting by str_id is faster than _id
 
-	print "Time it took: ",time.time()-startT
-	print "Done. Now seeing if they match..."
+	PossibleTweetList = list(twitterDB.find({"text":{"$regex":bigMovieRegex}}).sort([['id_str', -1]]).limit(howMuchToSearch))# sorting by str_id is faster than _id
 	
 	movieRegTupe = tupleMoviesRegex(movies,moviesToRegexList(movies))
 	for tweet in PossibleTweetList:
@@ -160,7 +147,7 @@ def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN,bot):#maybe needs a better n
 					if isTweetRecent(bot,tweet['id_str']):
 						title = rememberTheMovie(tweet['text'],movieRegTupe)
 						spoil(tweet,title,sqlCURSOR)
-						message=str(sspoil(tweet,title,sqlCURSOR)[0])
+						message=str(spoil(tweet,title,sqlCURSOR)[0])
 						speakerID=tweet['id_str']
 						id=bot.statuses.oembed(_id=speakerID)
 						screen_name=id['author_url'].split()[0][20:]
@@ -175,7 +162,7 @@ def query(bigMovieRegex,twitterDB,sqlCURSOR,sqlCONN,bot):#maybe needs a better n
 
 ###############################################################
 
-movies =[#should be moved to main.py in the future
+movies =[
 		"The Maze Runner",
 		"Breaking Bad",
 		"Dracular Untold",
@@ -253,12 +240,6 @@ movies =[#should be moved to main.py in the future
 		"Castle",
 		"Whiplash",
 		]
-		
-#general comments on the movie database:
-#fix double single quotes
-#fix some unicode mistakes
-
-#turns out it's faster with more popular movies, not more movies.
 
 ###############################################################
 
@@ -271,12 +252,9 @@ noDuplicatesSetup(sqlCONN)
 bot = twitterwrapper.oauth_login()
 bot_name = '@MovieSpoilerBot' #put your actual bot's name here
 
-for i in range(2):
+while True:
 	query(megaRegex,twitterDB,sqlCURSOR,sqlCONN,bot)
-	print "Total Matches: ",matchedCounter,"/",howMuchToSearch
-	matchedCounter=0
-
-#print oneRegexToRuleThemAll(moviesToRegexList(movies))
+	time.sleep(8)#screw system resources
 
 
 ###############################################################
