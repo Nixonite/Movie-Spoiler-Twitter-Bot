@@ -1,5 +1,4 @@
-#taken from https://github.com/cem3394/csun
-
+#partially taken from https://github.com/cem3394/csun
 import os
 import sys
 import time
@@ -14,10 +13,8 @@ from httplib import BadStatusLine
 
 sys.path.append("/Users/nixonite/Documents/Code/Github/MovieSpoilerBot") 
 #put the directory of the keys 1 level above the project directory to hide from accidental commits
+#consider remaking this part in order to work on other systems
 import moviespoilerbotkeys as msbk
-
-#import any other natual processing libs
-
 
 # go to http://twitter.com/apps/new to create an app and get values
 # for these credentials that you'll need to provide in place of these
@@ -96,47 +93,12 @@ def make_twitter_request(twitter_api_func, max_errors=10, *args, **kw):
             if error_count > max_errors:
                 print >> sys.stderr, "Too many consecutive errors...bailing out."
                 raise
-                
 
-# all of your project code can be wrapped inside of this function
-# right now response just parrots the message back at the sender
-
-def response(message):
-	return message
-
-
-if __name__ == "__main__":
-
-	if os.path.exists("last_id.txt"):
-		f = file("last_id.txt", "r")
-		last_id = f.read()
-		last_id = int(last_id)
-		f.close()
-	else:
-		f = file("last_id.txt","w+")
-		last_id = -1
-		f.write(str(last_id))
-		f.close()
-	
-	
-	bot = oauth_login()
-	bot_name = '@MovieSpoilerBot' #put your actual bot's name here
-	
+def stuff():
 	#main loop. Just keep searching anyone talking to us
 	while True:
 		try:
-			mentions = make_twitter_request(bot.statuses.mentions_timeline)
-			
-			status = make_twitter_request(bot.statuses.user_timeline)
-			#status is a list of the tweets with a ton of info, organized as newest tweet at status[0] and oldest at status[-1]
-			#note that a new tweet has a numerically greater twitter id than an older one
-			
-			if len(status) > 0:
-				last_id = status[0]['in_reply_to_status_id']
-
-			if not mentions:
-				print "No one talking to us now...", time.ctime()
-
+			firstTime = mybot.statuses.show(id=idNum)#mybot = oauth_login()
 			for mention in mentions:
 				if mention['id'] > last_id:
 					message = mention['text'].replace(bot_name, '')
@@ -148,16 +110,10 @@ if __name__ == "__main__":
 					reply = '@%s %s' % (speaker, response(message)) 
 					print "[+] Replying " , reply
 					bot.statuses.update(status=reply,in_reply_to_status_id=id)
-			
+		
 			sleep_int = 5 #downtime interval in seconds
 			print "Sleeping...\n"
 			time.sleep(sleep_int)
-			
+		
 		except KeyboardInterrupt:
-			open("last_id.txt","w").close()
-			f = file("last_id.txt","w")
-			f.write(str(last_id))
-			f.close()
-			print"[!] Cleaning up. Last speaker_id was ", speaker_id
-			
 			sys.exit()
